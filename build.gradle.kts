@@ -22,10 +22,12 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+	implementation("org.jetbrains.kotlin:kotlin-noarg:1.4.21")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 
 	implementation("org.postgresql","postgresql","42.2.18")
 	implementation("org.bgee.log4jdbc-log4j2","log4jdbc-log4j2-jdbc4.1","1.16")
+	implementation("org.jsoup","jsoup","1.13.1")
 }
 
 tasks.withType<KotlinCompile> {
