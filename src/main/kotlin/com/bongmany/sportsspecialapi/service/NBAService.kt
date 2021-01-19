@@ -1,31 +1,53 @@
 package com.bongmany.sportsspecialapi.service
 
+import com.bongmany.sportsspecialapi.URLInformation
 import org.jsoup.Jsoup
+import java.sql.Date
+import java.text.SimpleDateFormat
+import java.util.Locale
+import kotlin.collections.ArrayList
 
-class NBAService {
+class NBAService(private val lastUpdate: Date) {
 
-    private val home = "https://www.basketball-reference.com"
+    private val nbaData = arrayListOf<List<String>>()
 
     fun runCrawler(): ArrayList<List<String>> {
+        val monthList = listOf("december", "january", "february", "march")
+        val firstIndex =
+            if (lastUpdate.month == 11) 0
+            else lastUpdate.month + 1
 
-        val nbaData = arrayListOf<List<String>>()
-        val month = listOf(
-            listOf("december", "12"), listOf("january", "01"),
-            listOf("february", "02"), listOf("march", "03")
-        )
-        var monthIndex = 0
-        val url = "${home}/leagues/NBA_2021_games-${month[monthIndex][0]}.html"
+        val monthRange = firstIndex..monthList.lastIndex
+        var firstMonth = lastUpdate.toString() != "0001-12-01"
 
+        for (i in monthRange) {
+            val url = "${URLInformation.secondURL}${monthList[i]}.html"
+            if (firstMonth) {
+                jsoupSchedule(url, firstMonth)
+                firstMonth = false
+            } else {
+                jsoupSchedule(url)
+            }
+        }
+        return nbaData
+    }
+
+    private fun jsoupSchedule(url: String, firstMonth: Boolean = false) {
+        var dateScan = firstMonth
         val doc = Jsoup.connect(url).get()
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
 
         for (tr in scheduleList) {
             val dateGame = tr.getElementsByAttributeValue("data-stat", "date_game").text()
-            val dateForm = "${dateGame.substring(13, 17)}-${month[monthIndex][1]}-${dateGame.substring(9, 11)}"
+            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(dateGame)
+            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
+            if (dateScan || lastUpdate.toString() == dateForm) {
+                if (lastUpdate.toString() == dateForm) dateScan = false
+                continue
+            }
 
             val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
             val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
-
             val boxScore = tr.getElementsByAttributeValue("data-stat", "box_score_text").first()
                 .getElementsByTag("a")
                 .attr("href")
@@ -36,17 +58,16 @@ class NBAService {
                     dateForm, homeTeam, awayTeam,
                     "${specialData[0]}(${specialData[1]})", "${specialData[2]}(${specialData[3]})"
                 )
+                println(dbField)
                 nbaData.add(dbField)
             } else {
-                println("$home/$boxScore")
+                break
             }
         }
-
-        return nbaData
     }
 
     private fun getSpecialData(homeTeam: String, awayTeam: String, boxScore: String): List<String>? {
-        val url = home + boxScore.replace("/boxscores/", "/boxscores/pbp/")
+        val url = URLInformation.homeURL + boxScore.replace("/boxscores/", "/boxscores/pbp/")
         val doc = Jsoup.connect(url).get()
 
         var threePointTeam = ""
@@ -54,7 +75,12 @@ class NBAService {
         var threePointPlayer = ""
         var freeThrowPlayer = ""
 
-        val pbp = doc.select("#pbp tbody").first().getElementsByTag("tr")
+        val pbp = try {
+            doc.select("#pbp tbody").first().getElementsByTag("tr")
+        } catch (e: NullPointerException) {
+            return null
+        }
+
         for (tr in pbp) {
             val td = tr.getElementsByTag("td")
             var winner = awayTeam

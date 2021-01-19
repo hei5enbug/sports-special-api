@@ -13,7 +13,7 @@ open class SpecialData {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int? = null
 
-    var gameDate : Date? = null
+    var gameDate: Date? = null
     var homeTeam: String? = null
     var awayTeam: String? = null
     var firstThreePoint: String? = null

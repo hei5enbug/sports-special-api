@@ -7,5 +7,5 @@ import java.util.*
 
 interface SDRepository : JpaRepository<NBAField, Long> {
 
-    fun findFirstByOrderByIdDesc()
+    fun findFirstByOrderByIdDesc():NBAField
 }
