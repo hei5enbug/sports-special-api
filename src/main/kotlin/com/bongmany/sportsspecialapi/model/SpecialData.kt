@@ -1,5 +1,6 @@
 package com.bongmany.sportsspecialapi.model
 
+import org.apache.tomcat.jni.Time
 import java.sql.Date
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
@@ -11,12 +12,12 @@ open class SpecialData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Int? = null
+    var id:Int = 0
 
-    var gameDate: Date? = null
-    var homeTeam: String? = null
-    var awayTeam: String? = null
-    var firstThreePoint: String? = null
-    var firstFreeThrow: String? = null
+    var gameDate: Date = Date(0)
+    var homeTeam: String = ""
+    var awayTeam: String = ""
+    var firstThreePoint: String = ""
+    var firstFreeThrow: String = ""
 
 }

@@ -4,18 +4,20 @@ import com.bongmany.sportsspecialapi.URLInformation
 import org.jsoup.Jsoup
 import java.sql.Date
 import java.text.SimpleDateFormat
-import java.util.Locale
-import kotlin.collections.ArrayList
+import java.util.*
 
-class NBAService(private val lastUpdate: Date) {
+class NBAService(private var lastUpdate: Date?) {
 
     private val nbaData = arrayListOf<List<String>>()
 
     fun runCrawler(): ArrayList<List<String>> {
+
+        if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
+
         val monthList = listOf("december", "january", "february", "march")
         val firstIndex =
-            if (lastUpdate.month == 11) 0
-            else lastUpdate.month + 1
+            if (lastUpdate!!.month == 11) 0
+            else lastUpdate!!.month + 1
 
         val monthRange = firstIndex..monthList.lastIndex
         var firstMonth = lastUpdate.toString() != "0001-12-01"
@@ -58,7 +60,6 @@ class NBAService(private val lastUpdate: Date) {
                     dateForm, homeTeam, awayTeam,
                     "${specialData[0]}(${specialData[1]})", "${specialData[2]}(${specialData[3]})"
                 )
-                println(dbField)
                 nbaData.add(dbField)
             } else {
                 break
