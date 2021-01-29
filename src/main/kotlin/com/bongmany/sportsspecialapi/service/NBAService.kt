@@ -10,6 +10,7 @@ class NBAService(private var lastUpdate: Date?) {
 
     private val nbaData = arrayListOf<List<String>>()
 
+    // 월별 크롤링할 url 수정
     fun runCrawler(): ArrayList<List<String>> {
 
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
@@ -34,6 +35,7 @@ class NBAService(private var lastUpdate: Date?) {
         return nbaData
     }
 
+    // 
     private fun jsoupSchedule(url: String, firstMonth: Boolean = false) {
         var dateScan = firstMonth
         val doc = Jsoup.connect(url).get()
