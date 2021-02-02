@@ -2,7 +2,9 @@ package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.controller.SDController
 import com.bongmany.sportsspecialapi.model.NBAField
+import com.bongmany.sportsspecialapi.repository.EasternRepository
 import com.bongmany.sportsspecialapi.repository.SDRepository
+import com.bongmany.sportsspecialapi.repository.WesternRepository
 import org.apache.juli.logging.LogFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -11,13 +13,17 @@ import javax.annotation.PostConstruct
 
 // Update Schedule 00:10 AM everyday
 @Component
-class AutoSDUpdate(private val sdRepository: SDRepository) {
+class AutoSDUpdate(
+    private val sdRepository: SDRepository,
+    private val easternRepository: EasternRepository,
+    private val westernRepository: WesternRepository
+) {
 
     private final val log = LogFactory.getLog(SDController::class.java)
 
     @PostConstruct
     @Scheduled(cron = "0 10 0 * * *")
-    fun updateDB() {
+    fun updateSpecialData() {
 
         log.info("#log - special/nba/update request")
 
@@ -34,7 +40,17 @@ class AutoSDUpdate(private val sdRepository: SDRepository) {
 
             sdRepository.save(dbField)
         }
+        updateStat()
+
         log.info("#log - sepcial/nba/update DB save")
+    }
+
+
+    fun updateStat(){
+
+        val teamList = sdRepository.findTeamList()
+        log.info("#log - $teamList")
+
     }
 
 }

@@ -1,6 +1,5 @@
 package com.bongmany.sportsspecialapi.model
 
-import org.apache.tomcat.jni.Time
 import java.sql.Date
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
