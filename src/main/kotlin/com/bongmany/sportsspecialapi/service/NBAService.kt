@@ -1,6 +1,6 @@
 package com.bongmany.sportsspecialapi.service
 
-import com.bongmany.sportsspecialapi.URLInformation
+import com.bongmany.sportsspecialapi.SecurityInformation
 import org.jsoup.Jsoup
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -17,14 +17,14 @@ class NBAService(private var lastUpdate: Date?) {
 
         val monthList = listOf("december", "january", "february", "march")
         val firstIndex =
-            if (lastUpdate!!.month == 11) 0
-            else lastUpdate!!.month + 1
+            if (lastUpdate!!.toLocalDate().monthValue == 12) 0
+            else lastUpdate!!.toLocalDate().monthValue
 
         val monthRange = firstIndex..monthList.lastIndex
         var firstMonth = lastUpdate.toString() != "0001-12-01"
 
         for (i in monthRange) {
-            val url = "${URLInformation.secondURL}${monthList[i]}.html"
+            val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
             if (firstMonth) {
                 jsoupSchedule(url, firstMonth)
                 firstMonth = false
@@ -70,7 +70,7 @@ class NBAService(private var lastUpdate: Date?) {
     }
 
     private fun getSpecialData(homeTeam: String, awayTeam: String, boxScore: String): List<String>? {
-        val url = URLInformation.homeURL + boxScore.replace("/boxscores/", "/boxscores/pbp/")
+        val url = SecurityInformation.homeURL + boxScore.replace("/boxscores/", "/boxscores/pbp/")
         val doc = Jsoup.connect(url).get()
 
         var threePointTeam = ""

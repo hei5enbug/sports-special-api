@@ -9,5 +9,5 @@ import org.springframework.scheduling.annotation.EnableScheduling
 class SportsSpecialApiApplication
 
 fun main(args: Array<String>) {
-	runApplication<SportsSpecialApiApplication>(*args)
+    runApplication<SportsSpecialApiApplication>(*args)
 }

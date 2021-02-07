@@ -25,7 +25,7 @@ class AutoSDUpdate(
     @Scheduled(cron = "0 10 0 * * *")
     fun updateSpecialData() {
 
-        log.info("#log - special/nba/update request")
+        log.info("#AutoSDUpdate - DB update start")
 
         val lastData = sdRepository.findFirstByOrderByIdDesc()?.gameDate
         val nbaDatas = NBAService(lastData).runCrawler()
@@ -42,15 +42,13 @@ class AutoSDUpdate(
         }
         updateStat()
 
-        log.info("#log - sepcial/nba/update DB save")
+        log.info("#AutoSDUpdate - DB update finish")
     }
 
 
     fun updateStat(){
-
         val teamList = sdRepository.findTeamList()
-        log.info("#log - $teamList")
-
+        log.info("#AutoSDUpdate - $teamList")
     }
 
 }
