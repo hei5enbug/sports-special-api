@@ -42,8 +42,8 @@ class NBAService(private var lastUpdate: Date?) {
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
 
         for (tr in scheduleList) {
-            val dateGame = tr.getElementsByAttributeValue("data-stat", "date_game").text()
-            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(dateGame)
+            val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
+            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
             val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
             if (dateScan || lastUpdate.toString() == dateForm) {
                 if (lastUpdate.toString() == dateForm) dateScan = false
@@ -62,6 +62,7 @@ class NBAService(private var lastUpdate: Date?) {
                     dateForm, homeTeam, awayTeam,
                     "${specialData[0]}(${specialData[1]})", "${specialData[2]}(${specialData[3]})"
                 )
+//                println(dbField)
                 nbaData.add(dbField)
             } else {
                 break
@@ -70,7 +71,7 @@ class NBAService(private var lastUpdate: Date?) {
     }
 
     private fun getSpecialData(homeTeam: String, awayTeam: String, boxScore: String): List<String>? {
-        val url = SecurityInformation.homeURL + boxScore.replace("/boxscores/", "/boxscores/pbp/")
+        val url = SecurityInformation.nbaURL + boxScore.replace("/boxscores/", "/boxscores/pbp/")
         val doc = Jsoup.connect(url).get()
 
         var threePointTeam = ""

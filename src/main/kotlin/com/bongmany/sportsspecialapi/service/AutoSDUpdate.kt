@@ -2,8 +2,10 @@ package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.controller.SDController
 import com.bongmany.sportsspecialapi.model.NBAField
+import com.bongmany.sportsspecialapi.model.WKBLField
 import com.bongmany.sportsspecialapi.repository.EasternRepository
 import com.bongmany.sportsspecialapi.repository.SDRepository
+import com.bongmany.sportsspecialapi.repository.WKBLRepository
 import com.bongmany.sportsspecialapi.repository.WesternRepository
 import org.apache.juli.logging.LogFactory
 import org.springframework.scheduling.annotation.Scheduled
@@ -15,6 +17,7 @@ import javax.annotation.PostConstruct
 @Component
 class AutoSDUpdate(
     private val sdRepository: SDRepository,
+    private val wkblRepository: WKBLRepository,
     private val easternRepository: EasternRepository,
     private val westernRepository: WesternRepository
 ) {
@@ -22,13 +25,19 @@ class AutoSDUpdate(
     private final val log = LogFactory.getLog(SDController::class.java)
 
     @PostConstruct
-    @Scheduled(cron = "0 10 0 * * *")
-    fun updateSpecialData() {
+    @Scheduled(cron = "0 10 0 * * *", zone = "Asia/Seoul")
+    fun updateAllSD(){
+        updateNBA()
+        updateWKBL()
+        updateStat()
+    }
 
-        log.info("#AutoSDUpdate - DB update start")
+    fun updateNBA() {
 
-        val lastData = sdRepository.findFirstByOrderByIdDesc()?.gameDate
-        val nbaDatas = NBAService(lastData).runCrawler()
+        log.info("#AutoSDUpdate - NBA update start")
+
+        val nbaLast = sdRepository.findFirstByOrderByIdDesc()?.gameDate
+        val nbaDatas = NBAService(nbaLast).runCrawler()
 
         nbaDatas.forEach { nbaData ->
             val dbField = NBAField()
@@ -40,9 +49,29 @@ class AutoSDUpdate(
 
             sdRepository.save(dbField)
         }
-        updateStat()
 
-        log.info("#AutoSDUpdate - DB update finish")
+        log.info("#AutoSDUpdate - NBA update finish")
+    }
+
+    fun updateWKBL() {
+
+        log.info("#AutoSDUpdate - WKBL update start")
+
+        val wkblLast = wkblRepository.findFirstByOrderByIdDesc()?.gameDate
+        val wkblDatas = WKBLSerivce(wkblLast).runCrawler()
+
+        wkblDatas.forEach { wkblData ->
+            val dbField = WKBLField()
+            dbField.gameDate = Date.valueOf(wkblData[0])
+            dbField.homeTeam = wkblData[1]
+            dbField.awayTeam = wkblData[2]
+            dbField.firstThreePoint = wkblData[3]
+            dbField.firstFreeThrow = wkblData[4]
+
+            wkblRepository.save(dbField)
+        }
+
+        log.info("#AutoSDUpdate - WKBL update finish")
     }
 
 
