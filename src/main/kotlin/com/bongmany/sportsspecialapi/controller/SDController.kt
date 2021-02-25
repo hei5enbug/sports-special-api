@@ -19,12 +19,12 @@ class SDController(private val sdRepository: SDRepository) {
     }
 
     @RequestMapping("/special/nba/{teamName}")
-    fun getFieldByTeamName(@PathVariable("teamName") teamName: String): List<NBAField> {
+    fun getNBAByTeamName(@PathVariable("teamName") teamName: String): List<NBAField> {
         return sdRepository.findAllByHomeTeamOrAwayTeamLike(teamName, teamName)
     }
 
     @RequestMapping("/special/nba")
-    fun getAllField(): MutableList<NBAField> {
+    fun getNBAAll(): MutableList<NBAField> {
         return sdRepository.findAll()
     }
 
