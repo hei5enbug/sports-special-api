@@ -1,12 +1,10 @@
 package com.bongmany.sportsspecialapi.service
 
-import com.bongmany.sportsspecialapi.controller.SDController
+import com.bongmany.sportsspecialapi.controller.NBAController
+import com.bongmany.sportsspecialapi.model.KBLField
 import com.bongmany.sportsspecialapi.model.NBAField
 import com.bongmany.sportsspecialapi.model.WKBLField
-import com.bongmany.sportsspecialapi.repository.EasternRepository
-import com.bongmany.sportsspecialapi.repository.SDRepository
-import com.bongmany.sportsspecialapi.repository.WKBLRepository
-import com.bongmany.sportsspecialapi.repository.WesternRepository
+import com.bongmany.sportsspecialapi.repository.*
 import org.apache.juli.logging.LogFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -16,18 +14,20 @@ import javax.annotation.PostConstruct
 // Update Schedule 00:10 AM everyday
 @Component
 class AutoSDUpdate(
-    private val sdRepository: SDRepository,
+    private val NBARepository: NBARepository,
     private val wkblRepository: WKBLRepository,
+    private val kblRepository: KBLRepository,
     private val easternRepository: EasternRepository,
     private val westernRepository: WesternRepository
 ) {
 
-    private final val log = LogFactory.getLog(SDController::class.java)
+    private final val log = LogFactory.getLog(NBAController::class.java)
 
     @PostConstruct
     @Scheduled(cron = "0 10 0 * * *", zone = "Asia/Seoul")
     fun updateAllSD(){
         updateNBA()
+        updateKBL()
         updateWKBL()
         updateStat()
     }
@@ -36,7 +36,7 @@ class AutoSDUpdate(
 
         log.info("#AutoSDUpdate - NBA update start")
 
-        val nbaLast = sdRepository.findFirstByOrderByIdDesc()?.gameDate
+        val nbaLast = NBARepository.findFirstByOrderByIdDesc()?.gameDate
         val nbaDatas = NBAService(nbaLast).runCrawler()
 
         nbaDatas.forEach { nbaData ->
@@ -47,10 +47,31 @@ class AutoSDUpdate(
             dbField.firstThreePoint = nbaData[3]
             dbField.firstFreeThrow = nbaData[4]
 
-            sdRepository.save(dbField)
+            NBARepository.save(dbField)
         }
 
         log.info("#AutoSDUpdate - NBA update finish")
+    }
+
+    fun updateKBL() {
+
+        log.info("#AutoSDUpdate - KBL update start")
+
+        val kblLast = kblRepository.findFirstByOrderByIdDesc()?.gameDate
+        val kblDatas = KBLService(kblLast).runCrawler()
+
+        kblDatas.forEach { kblData ->
+            val dbField = KBLField()
+            dbField.gameDate = Date.valueOf(kblData[0])
+            dbField.homeTeam = kblData[1]
+            dbField.awayTeam = kblData[2]
+            dbField.firstThreePoint = kblData[3]
+            dbField.firstFreeThrow = kblData[4]
+
+            kblRepository.save(dbField)
+        }
+
+        log.info("#AutoSDUpdate - KBL update finish")
     }
 
     fun updateWKBL() {
@@ -76,7 +97,7 @@ class AutoSDUpdate(
 
 
     fun updateStat(){
-        val teamList = sdRepository.findTeamList()
+        val teamList = NBARepository.findTeamList()
         log.info("#AutoSDUpdate - $teamList")
     }
 

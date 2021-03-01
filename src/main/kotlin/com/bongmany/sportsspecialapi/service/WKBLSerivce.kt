@@ -1,7 +1,7 @@
 package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.SecurityInformation
-import com.bongmany.sportsspecialapi.controller.SDController
+import com.bongmany.sportsspecialapi.controller.NBAController
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
 import java.sql.Date
@@ -11,15 +11,14 @@ import java.util.*
 class WKBLSerivce(private var lastUpdate: Date?) {
 
     private val wkblData = arrayListOf<List<String>>()
-    private val log = LogFactory.getLog(SDController::class.java)
+    private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler(): ArrayList<List<String>> {
 
         if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-01")
 
         val monthList = listOf("202010", "202011", "202012", "202101", "202102")
-        val lastMonth = lastUpdate!!.toLocalDate().monthValue
-        val firstIndex = when (lastMonth) {
+        val firstIndex = when (val lastMonth = lastUpdate!!.toLocalDate().monthValue) {
             in 10..12 -> lastMonth - 10
             else -> lastMonth + 2
         }

@@ -1,11 +1,8 @@
 package com.bongmany.sportsspecialapi.controller
 
-import com.bongmany.sportsspecialapi.model.NBAField
 import com.bongmany.sportsspecialapi.model.WKBLField
-import com.bongmany.sportsspecialapi.repository.SDRepository
 import com.bongmany.sportsspecialapi.repository.WKBLRepository
 import org.apache.juli.logging.LogFactory
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController

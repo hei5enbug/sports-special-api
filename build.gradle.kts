@@ -26,6 +26,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     implementation("com.github.ulisesbocchio","jasypt-spring-boot-starter","3.0.3")
+    implementation ("org.seleniumhq.selenium","selenium-java","3.141.59")
     implementation("org.postgresql", "postgresql", "42.2.18")
     implementation("org.jsoup", "jsoup", "1.13.1")
 
