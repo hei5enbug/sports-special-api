@@ -31,6 +31,9 @@ class KBLService(private var lastUpdate: Date?) {
         val today = LocalDateTime.now().format(formatter)
         val startCode = getGameCode(lastDay)
         val endCode = getGameCode(today)
+        if(startCode == endCode) {
+            return kblData
+        }
 
         for (gameCode in startCode..endCode) {
             val csvline = getCSVline(gameCode)
