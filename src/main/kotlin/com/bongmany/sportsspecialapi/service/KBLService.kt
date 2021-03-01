@@ -109,7 +109,7 @@ class KBLService(private var lastUpdate: Date?) {
     private fun createDriver() {
         System.setProperty(
             "webdriver.chrome.driver",
-            "src/main/kotlin/com/bongmany/sportsspecialapi/drivers/chromedriver 2"
+            "src/main/kotlin/com/bongmany/sportsspecialapi/drivers/chromedriver"
         )
         System.setProperty("webdriver.chrome.silentOutput", "true")
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
