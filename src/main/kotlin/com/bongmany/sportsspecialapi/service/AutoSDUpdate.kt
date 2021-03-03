@@ -28,8 +28,7 @@ class AutoSDUpdate(
     fun updateAllSD(){
         updateNBA()
         updateKBL()
-        updateWKBL()
-        updateStat()
+//        updateWKBL()
     }
 
     fun updateNBA() {

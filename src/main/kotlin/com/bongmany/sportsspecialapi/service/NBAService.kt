@@ -1,6 +1,8 @@
 package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.SecurityInformation
+import com.bongmany.sportsspecialapi.controller.NBAController
+import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -9,6 +11,7 @@ import java.util.*
 class NBAService(private var lastUpdate: Date?) {
 
     private val nbaData = arrayListOf<List<String>>()
+    private val log = LogFactory.getLog(NBAController::class.java)
 
     // 월별 크롤링할 url 수정
     fun runCrawler(): ArrayList<List<String>> {
@@ -26,17 +29,17 @@ class NBAService(private var lastUpdate: Date?) {
         for (i in monthRange) {
             val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
             if (firstMonth) {
-                jsoupSchedule(url, firstMonth)
+                rangeSchedule(url, firstMonth)
                 firstMonth = false
             } else {
-                jsoupSchedule(url)
+                rangeSchedule(url)
             }
         }
         return nbaData
     }
 
     // 
-    private fun jsoupSchedule(url: String, firstMonth: Boolean = false) {
+    private fun rangeSchedule(url: String, firstMonth: Boolean = false) {
         var dateScan = firstMonth
         val doc = Jsoup.connect(url).get()
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
@@ -62,7 +65,7 @@ class NBAService(private var lastUpdate: Date?) {
                     dateForm, homeTeam, awayTeam,
                     "${specialData[0]}(${specialData[1]})", "${specialData[2]}(${specialData[3]})"
                 )
-//                println(dbField)
+//                log.info("## NBAService -- $dbField")
                 nbaData.add(dbField)
             } else {
                 break

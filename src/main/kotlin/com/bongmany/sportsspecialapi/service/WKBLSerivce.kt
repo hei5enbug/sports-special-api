@@ -28,17 +28,17 @@ class WKBLSerivce(private var lastUpdate: Date?) {
 
         for (i in monthRange) {
             if (firstMonth) {
-                jsoupSchedule(monthList[i], firstMonth)
+                rangeSchedule(monthList[i], firstMonth)
                 firstMonth = false
             } else {
-                jsoupSchedule(monthList[i])
+                rangeSchedule(monthList[i])
             }
         }
         return wkblData
     }
 
 
-    private fun jsoupSchedule(scheduleDate: String, firstMonth: Boolean = false) {
+    private fun rangeSchedule(scheduleDate: String, firstMonth: Boolean = false) {
         var dateScan = firstMonth
 
         val url = SecurityInformation.wkblURL + scheduleDate + "&viewType=1"
@@ -58,17 +58,17 @@ class WKBLSerivce(private var lastUpdate: Date?) {
             val gameURL = tr.select("a.btn_type1.btn_pink").attr("href")
             if (gameURL.isEmpty()) break
 
-            val specialData = getCSVLine(gameURL)
+            val specialData = makeField(gameURL)
             if (specialData.isEmpty()) println(gameURL)
             else {
-//                println("$dateForm  $homeTeam  $awayTeam  ${specialData[0]}  ${specialData[1]}")
                 val dbField = listOf(dateForm, homeTeam, awayTeam, specialData[0], specialData[1])
+//                log.info("## WKBLService -- $dbField")
                 wkblData.add(dbField)
             }
         }
     }
 
-    private fun getCSVLine(gameURL: String): List<String> {
+    private fun makeField(gameURL: String): List<String> {
         val doc = Jsoup.connect(gameURL).get()
         val pbp = doc.select("div.playbyplay-content.list > div > ul")
 

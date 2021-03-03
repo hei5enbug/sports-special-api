@@ -29,14 +29,14 @@ class KBLService(private var lastUpdate: Date?) {
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
         val lastDay = lastUpdate!!.toLocalDate().format(formatter)
         val today = LocalDateTime.now().format(formatter)
-        val startCode = getGameCode(lastDay)
+        val startCode = getGameCode(lastDay) + 1
         val endCode = getGameCode(today)
-        if(startCode == endCode) {
+        if(startCode >= endCode) {
             return kblData
         }
 
         for (gameCode in startCode..endCode) {
-            val csvline = getCSVline(gameCode)
+            val csvline = makeField(gameCode)
             if (csvline != null) {
                 kblData.add(csvline)
             }
@@ -50,7 +50,7 @@ class KBLService(private var lastUpdate: Date?) {
         val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$today"
         driver?.get(url)
         driver!!.findElements(By.cssSelector("#scheduleList tr"))
-        val trSelect = driver!!.findElements(By.className("tr_selected"))[0]
+        val trSelect = driver!!.findElements(By.className("tr_selected")).last()
         val tdBtn = trSelect.findElements(By.cssSelector("td.td_btn > a"))
         if (tdBtn.isNotEmpty()) {
             val lastLink = tdBtn[0].getAttribute("href")
@@ -59,8 +59,9 @@ class KBLService(private var lastUpdate: Date?) {
         return 0
     }
 
-    private fun getCSVline(gameCode: Int): List<String>? {
+    private fun makeField(gameCode: Int): List<String>? {
         val url = "${SecurityInformation.kblURL}/game/$gameCode/cast"
+        log.info("#KBLService - $url")
         driver?.get(url)
 
         val innerTime = driver!!.findElements(By.className("inner_time"))
