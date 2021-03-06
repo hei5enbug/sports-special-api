@@ -2,23 +2,26 @@ package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.SecurityInformation
 import com.bongmany.sportsspecialapi.controller.NBAController
+import com.bongmany.sportsspecialapi.model.NBAField
+import com.bongmany.sportsspecialapi.repository.NBARepository
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
+import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
 import java.util.*
 
-class NBAService(private var lastUpdate: Date?) {
+@Service
+class NBAService(private val nbaRepository: NBARepository) {
 
-    private val nbaData = arrayListOf<List<String>>()
+    private var lastUpdate: Date? = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
     private val log = LogFactory.getLog(NBAController::class.java)
 
-    // 월별 크롤링할 url 수정
-    fun runCrawler(): ArrayList<List<String>> {
+    fun runCrawler() {
 
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
 
-        val monthList = listOf("december", "january", "february", "march")
+        val monthList = listOf("december", "january", "february", "march", "april", "may")
         val firstIndex =
             if (lastUpdate!!.toLocalDate().monthValue == 12) 0
             else lastUpdate!!.toLocalDate().monthValue
@@ -28,6 +31,7 @@ class NBAService(private var lastUpdate: Date?) {
 
         for (i in monthRange) {
             val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
+//            log.info("## NBAService -- $url")
             if (firstMonth) {
                 rangeSchedule(url, firstMonth)
                 firstMonth = false
@@ -35,10 +39,9 @@ class NBAService(private var lastUpdate: Date?) {
                 rangeSchedule(url)
             }
         }
-        return nbaData
     }
 
-    // 
+
     private fun rangeSchedule(url: String, firstMonth: Boolean = false) {
         var dateScan = firstMonth
         val doc = Jsoup.connect(url).get()
@@ -61,12 +64,9 @@ class NBAService(private var lastUpdate: Date?) {
             val specialData = getSpecialData(homeTeam, awayTeam, boxScore)
 
             if (specialData != null) {
-                val dbField = listOf(
-                    dateForm, homeTeam, awayTeam,
-                    "${specialData[0]}(${specialData[1]})", "${specialData[2]}(${specialData[3]})"
-                )
+                val dbField = NBAField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
 //                log.info("## NBAService -- $dbField")
-                nbaData.add(dbField)
+                nbaRepository.save(dbField)
             } else {
                 break
             }
@@ -102,7 +102,7 @@ class NBAService(private var lastUpdate: Date?) {
                     winner = homeTeam
                 }
                 if (freeThrowTeam != "" && threePointTeam != "") {
-                    return listOf(threePointTeam, threePointPlayer, freeThrowTeam, freeThrowPlayer)
+                    return listOf("$threePointTeam($threePointPlayer)", "$freeThrowTeam($freeThrowPlayer)")
                 }
             }
         }

@@ -2,18 +2,22 @@ package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.SecurityInformation
 import com.bongmany.sportsspecialapi.controller.NBAController
+import com.bongmany.sportsspecialapi.model.WKBLField
+import com.bongmany.sportsspecialapi.repository.WKBLRepository
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
+import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
 import java.util.*
 
-class WKBLSerivce(private var lastUpdate: Date?) {
+@Service
+class WKBLService(private val wkblRepository: WKBLRepository) {
 
-    private val wkblData = arrayListOf<List<String>>()
+    private var lastUpdate: Date? = wkblRepository.findFirstByOrderByIdDesc()?.gameDate
     private val log = LogFactory.getLog(NBAController::class.java)
 
-    fun runCrawler(): ArrayList<List<String>> {
+    fun runCrawler() {
 
         if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-01")
 
@@ -34,7 +38,6 @@ class WKBLSerivce(private var lastUpdate: Date?) {
                 rangeSchedule(monthList[i])
             }
         }
-        return wkblData
     }
 
 
@@ -61,9 +64,9 @@ class WKBLSerivce(private var lastUpdate: Date?) {
             val specialData = makeField(gameURL)
             if (specialData.isEmpty()) println(gameURL)
             else {
-                val dbField = listOf(dateForm, homeTeam, awayTeam, specialData[0], specialData[1])
+                val dbField = WKBLField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
 //                log.info("## WKBLService -- $dbField")
-                wkblData.add(dbField)
+                wkblRepository.save(dbField)
             }
         }
     }
@@ -98,7 +101,6 @@ class WKBLSerivce(private var lastUpdate: Date?) {
                 return listOf("$threePointTeam($threePointPlayer)", "$freeThrowTeam($freeThrowPlayer)")
             }
         }
-
         return listOf()
     }
 }

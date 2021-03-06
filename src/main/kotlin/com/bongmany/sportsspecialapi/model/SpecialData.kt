@@ -7,16 +7,14 @@ import javax.persistence.Id
 import javax.persistence.MappedSuperclass
 
 @MappedSuperclass
-open class SpecialData {
-
+open class SpecialData(
+    var gameDate: Date,
+    var homeTeam: String,
+    var awayTeam: String,
+    var firstThreePoint: String,
+    var firstFreeThrow: String
+) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id:Int = 0
-
-    var gameDate: Date = Date(0)
-    var homeTeam: String = ""
-    var awayTeam: String = ""
-    var firstThreePoint: String = ""
-    var firstFreeThrow: String = ""
-
+    var id: Int = 0
 }
