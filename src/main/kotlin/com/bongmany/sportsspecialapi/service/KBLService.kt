@@ -9,7 +9,6 @@ import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -21,7 +20,7 @@ import java.util.logging.Level
 @Service
 class KBLService(private val kblRepository: KBLRepository) {
 
-    private var lastUpdate: Date? = kblRepository.findFirstByOrderByIdDesc()?.gameDate
+    private var lastUpdate: Date? = kblRepository.findFirstByOrderByGameDateDesc()?.gameDate
     private var webDriver: WebDriver? = null
     private var chromeOptions: ChromeOptions? = null
     private val log = LogFactory.getLog(NBAController::class.java)

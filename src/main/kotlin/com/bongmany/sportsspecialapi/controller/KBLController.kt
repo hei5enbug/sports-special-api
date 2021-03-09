@@ -13,13 +13,13 @@ class KBLController(private val kblRepository: KBLRepository) {
     private final val log = LogFactory.getLog(KBLController::class.java)
 
     @RequestMapping("/special/kbl/{teamName}")
-    fun getKBLByTeamName(@PathVariable("teamName") teamName: String): List<KBLField> {
-        return kblRepository.findAllByHomeTeamOrAwayTeamLike(teamName, teamName)
+    fun getKBLByTeamName(@PathVariable("teamName") teamName: String): ArrayList<KBLField> {
+        return kblRepository.findAllByHomeTeamOrAwayTeamLikeOrderByGameDateAsc(teamName, teamName)
     }
 
     @RequestMapping("/special/kbl")
-    fun getKBLAll(): MutableList<KBLField> {
-        return kblRepository.findAll()
+    fun getKBLAll(): ArrayList<KBLField> {
+        return kblRepository.findAllByOrderByGameDateAsc()
     }
 
 }
