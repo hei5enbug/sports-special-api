@@ -17,7 +17,7 @@ class AutoSDUpdate(
     private final val log = LogFactory.getLog(NBAController::class.java)
 
     @PostConstruct
-    @Scheduled(cron = "0 10 0 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 10 1 * * *", zone = "Asia/Seoul")
     fun updateAllSD() {
         updateNBA()
         updateKBL()
