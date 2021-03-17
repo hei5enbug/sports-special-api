@@ -19,6 +19,7 @@ class AutoSDUpdate(
     @PostConstruct
     @Scheduled(cron = "0 10 1 * * *", zone = "Asia/Seoul")
     fun updateAllSD() {
+        // update AM 01:10 everyday
         updateNBA()
         updateKBL()
         updateWKBL()

@@ -3,32 +3,39 @@ package com.bongmany.sportsspecialapi.service
 import com.bongmany.sportsspecialapi.SecurityInformation
 import com.bongmany.sportsspecialapi.controller.NBAController
 import com.bongmany.sportsspecialapi.model.NBAField
+import com.bongmany.sportsspecialapi.model.TodayGame
+import com.bongmany.sportsspecialapi.model.TodayGameId
 import com.bongmany.sportsspecialapi.repository.NBARepository
+import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Service
-class NBAService(private val nbaRepository: NBARepository) {
+class NBAService(private val nbaRepository: NBARepository, private val todayRepository: TodayRepository) {
 
     private var lastUpdate: Date? = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
-
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
-
         val monthList = listOf("december", "january", "february", "march", "april", "may")
+
+        val todayET = ZonedDateTime.now(ZoneId.of("America/New_York"))
+        val todayURL = "${SecurityInformation.secondURL}${monthList[todayET.monthValue]}.html"
+        getTodayGame(todayURL, todayET)
+
         val firstIndex =
             if (lastUpdate!!.toLocalDate().monthValue == 12) 0
             else lastUpdate!!.toLocalDate().monthValue
-
         val monthRange = firstIndex..monthList.lastIndex
         var firstMonth = lastUpdate.toString() != "0001-12-01"
-
         for (i in monthRange) {
             val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
 //            log.info("## NBAService -- $url")
@@ -41,6 +48,23 @@ class NBAService(private val nbaRepository: NBARepository) {
         }
     }
 
+    private fun getTodayGame(url: String, todayET: ZonedDateTime) {
+        todayRepository.deleteAll()
+
+        val doc = Jsoup.connect(url).get()
+        val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
+        for (tr in scheduleList) {
+            val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
+            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
+            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
+            if (dateForm == todayET.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))) {
+                val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
+                val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
+                val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba")
+                todayRepository.save(dbField)
+            }
+        }
+    }
 
     private fun rangeSchedule(url: String, firstMonth: Boolean = false) {
         var dateScan = firstMonth
