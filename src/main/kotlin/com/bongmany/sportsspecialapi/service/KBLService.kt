@@ -21,7 +21,7 @@ import java.util.logging.Level
 class KBLService(private val kblRepository: KBLRepository) {
 
     private var lastUpdate: Date? = kblRepository.findFirstByOrderByGameDateDesc()?.gameDate
-    private var webDriver: WebDriver? = null
+    private lateinit var webDriver: WebDriver
     private var chromeOptions: ChromeOptions? = null
     private val log = LogFactory.getLog(NBAController::class.java)
 
@@ -55,8 +55,8 @@ class KBLService(private val kblRepository: KBLRepository) {
 
     private fun getGameCode(gameDate: String): Int {
         val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$gameDate"
-        webDriver?.get(url)
-        val trSelect = webDriver!!.findElements(By.className("tr_selected")).last()
+        webDriver.get(url)
+        val trSelect = webDriver.findElements(By.className("tr_selected")).last()
         val tdBtn = trSelect.findElements(By.cssSelector("td.td_btn > a"))
         if (tdBtn.isNotEmpty()) {
             val lastLink = tdBtn[0].getAttribute("href")
@@ -68,9 +68,9 @@ class KBLService(private val kblRepository: KBLRepository) {
     private fun makeField(gameCode: Int): KBLField? {
         val url = "${SecurityInformation.kblURL}/game/$gameCode/cast"
 //        log.info("#KBLService - $url")
-        webDriver?.get(url)
+        webDriver.get(url)
 
-        val innerTime = webDriver!!.findElements(By.className("inner_time"))
+        val innerTime = webDriver.findElements(By.className("inner_time"))
         if (innerTime.size == 0) {
             log.info("#KBLService - wrong page error")
             return null
@@ -84,22 +84,22 @@ class KBLService(private val kblRepository: KBLRepository) {
         var freeCheck = false
         var freeWinner = ""
 
-        val txtDate = webDriver!!.findElement(By.className("txt_time")).text.substring(0, 9)
+        val txtDate = webDriver.findElement(By.className("txt_time")).text.substring(0, 9)
         val yearCheck = if (txtDate.substring(0, 2).toInt() in 10..12) "2020" else "2021"
         val toDate = SimpleDateFormat("yyyyMM.dd (EE)", Locale.KOREAN).parse(yearCheck + txtDate)
         val dateForm = Date.valueOf(SimpleDateFormat("yyyy-MM-dd").format(toDate))
 
-        val hometeam = webDriver!!.findElement(
+        val hometeam = webDriver.findElement(
             By.cssSelector(
                 "#gameScoreboardWrap > div > div > span.team_vs.team_vs1 > span > span"
             )
         ).text
-        val awayteam = webDriver!!.findElement(
+        val awayteam = webDriver.findElement(
             By.cssSelector(
                 "#gameScoreboardWrap > div > div > span.team_vs.team_vs2 > span > span"
             )
         ).text
-        val relayPiece = webDriver!!.findElements(By.className("relay_piece"))
+        val relayPiece = webDriver.findElements(By.className("relay_piece"))
         for (it in relayPiece) {
             val relay = it.text
             if (!threeCheck && relay.contains("3점슛성공")) {
@@ -123,12 +123,11 @@ class KBLService(private val kblRepository: KBLRepository) {
         )
         System.setProperty("webdriver.chrome.silentOutput", "true")
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
-        chromeOptions = ChromeOptions()
-        chromeOptions!!.addArguments("headless")
+        chromeOptions = ChromeOptions().addArguments("headless")
         webDriver = ChromeDriver(chromeOptions)
     }
 
     private fun quitDriver() {
-        webDriver!!.quit()
+        webDriver.quit()
     }
 }

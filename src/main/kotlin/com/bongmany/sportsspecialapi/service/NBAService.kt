@@ -4,7 +4,6 @@ import com.bongmany.sportsspecialapi.SecurityInformation
 import com.bongmany.sportsspecialapi.controller.NBAController
 import com.bongmany.sportsspecialapi.model.NBAField
 import com.bongmany.sportsspecialapi.model.TodayGame
-import com.bongmany.sportsspecialapi.model.TodayGameId
 import com.bongmany.sportsspecialapi.repository.NBARepository
 import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
@@ -50,17 +49,23 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
 
     private fun getTodayGame(url: String, todayET: ZonedDateTime) {
         todayRepository.deleteAll()
+        val recentDate = arrayListOf<String>(
+            todayET.minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            todayET.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+            todayET.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        )
 
         val doc = Jsoup.connect(url).get()
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
         for (tr in scheduleList) {
             val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
+            val gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
             val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
             val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
-            if (dateForm == todayET.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))) {
+            if (recentDate.contains(dateForm)) {
                 val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
                 val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
-                val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba")
+                val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba", gameTime)
                 todayRepository.save(dbField)
             }
         }

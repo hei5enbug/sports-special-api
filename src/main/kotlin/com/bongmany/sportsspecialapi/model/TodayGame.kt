@@ -21,5 +21,6 @@ data class TodayGame(
     var homeTeam: String,
     @get:Id
     var awayTeam: String,
-    var league: String
+    var league: String,
+    var gameTime: String
 )
