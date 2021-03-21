@@ -8,6 +8,7 @@ import com.bongmany.sportsspecialapi.repository.NBARepository
 import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -19,10 +20,11 @@ import java.util.*
 @Service
 class NBAService(private val nbaRepository: NBARepository, private val todayRepository: TodayRepository) {
 
-    private var lastUpdate: Date? = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
+    private var lastUpdate: Date? = null
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
+        lastUpdate = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
         val monthList = listOf("december", "january", "february", "march", "april", "may")
 
@@ -66,7 +68,12 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
                 val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
                 val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
                 val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba", gameTime)
-                todayRepository.save(dbField)
+                try {
+                    todayRepository.save(dbField)
+                } catch (e: DataIntegrityViolationException) {
+                    log.error(e)
+                    continue
+                }
             }
         }
     }
@@ -95,7 +102,12 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
             if (specialData != null) {
                 val dbField = NBAField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
 //                log.info("## NBAService -- $dbField")
-                nbaRepository.save(dbField)
+                try {
+                    nbaRepository.save(dbField)
+                } catch (e: DataIntegrityViolationException) {
+                    log.error(e)
+                    continue
+                }
             } else {
                 break
             }

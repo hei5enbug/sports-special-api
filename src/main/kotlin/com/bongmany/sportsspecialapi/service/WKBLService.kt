@@ -6,6 +6,7 @@ import com.bongmany.sportsspecialapi.model.WKBLField
 import com.bongmany.sportsspecialapi.repository.WKBLRepository
 import org.apache.juli.logging.LogFactory
 import org.jsoup.Jsoup
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -14,11 +15,12 @@ import java.util.*
 @Service
 class WKBLService(private val wkblRepository: WKBLRepository) {
 
-    private var lastUpdate: Date? = wkblRepository.findFirstByOrderByIdDesc()?.gameDate
+    private var lastUpdate: Date? = null
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
 
+        lastUpdate = wkblRepository.findFirstByOrderByIdDesc()?.gameDate
         if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-01")
 
         val monthList = listOf("202010", "202011", "202012", "202101", "202102")
@@ -66,7 +68,12 @@ class WKBLService(private val wkblRepository: WKBLRepository) {
             else {
                 val dbField = WKBLField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
 //                log.info("## WKBLService -- $dbField")
-                wkblRepository.save(dbField)
+                try {
+                    wkblRepository.save(dbField)
+                } catch (e: DataIntegrityViolationException) {
+                    log.error(e)
+                    continue
+                }
             }
         }
     }

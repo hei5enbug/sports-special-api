@@ -7,8 +7,10 @@ import com.bongmany.sportsspecialapi.repository.KBLRepository
 import org.apache.juli.logging.LogFactory
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
@@ -20,12 +22,13 @@ import java.util.logging.Level
 @Service
 class KBLService(private val kblRepository: KBLRepository) {
 
-    private var lastUpdate: Date? = kblRepository.findFirstByOrderByGameDateDesc()?.gameDate
+    private var lastUpdate: Date? = null
     private lateinit var webDriver: WebDriver
     private var chromeOptions: ChromeOptions? = null
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
+        lastUpdate = kblRepository.findFirstByOrderByGameDateDesc()?.gameDate
         if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-09")
         createDriver()
 
@@ -46,7 +49,12 @@ class KBLService(private val kblRepository: KBLRepository) {
         for (gameCode in startCode..endCode) {
             val fieldLine = makeField(gameCode)
             if (fieldLine != null) {
-                kblRepository.save(fieldLine)
+                try {
+                    kblRepository.save(fieldLine)
+                } catch (e: DataIntegrityViolationException) {
+                    log.error(e)
+                    continue
+                }
             }
         }
 
@@ -56,13 +64,16 @@ class KBLService(private val kblRepository: KBLRepository) {
     private fun getGameCode(gameDate: String): Int {
         val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$gameDate"
         webDriver.get(url)
-        val trSelect = webDriver.findElements(By.className("tr_selected")).last()
-        val tdBtn = trSelect.findElements(By.cssSelector("td.td_btn > a"))
+        val trSelect = webDriver.findElements(By.className("tr_selected"))
+        if (trSelect.isEmpty()) return 80042809
+        
+        val trSelectLast = trSelect.last()
+        val tdBtn = trSelectLast.findElements(By.cssSelector("td.td_btn > a"))
         if (tdBtn.isNotEmpty()) {
             val lastLink = tdBtn[0].getAttribute("href")
             return lastLink.substring(lastLink.length - 8).toInt()
         }
-        return 99999999
+        return 80042809
     }
 
     private fun makeField(gameCode: Int): KBLField? {
