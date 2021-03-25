@@ -22,7 +22,7 @@ class AutoSDUpdate(
         // update PM 09:00 everyday
         updateNBA()
         updateKBL()
-        updateWKBL()
+        // updateWKBL()
     }
 
     fun updateNBA() {

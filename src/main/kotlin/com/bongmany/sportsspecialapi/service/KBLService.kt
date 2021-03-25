@@ -7,14 +7,14 @@ import com.bongmany.sportsspecialapi.repository.KBLRepository
 import org.apache.juli.logging.LogFactory
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import java.sql.Date
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.logging.Level
@@ -33,14 +33,14 @@ class KBLService(private val kblRepository: KBLRepository) {
         createDriver()
 
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val lastDay = lastUpdate!!.toLocalDate().format(formatter)
-        val today = LocalDateTime.now().format(formatter)
-        val startCode = if (lastDay == "20201009") {
+        val lastDate = lastUpdate!!.toLocalDate().format(formatter)
+        val dateKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).format(formatter)
+        val startCode = if (lastDate == "20201009") {
             80042809
         } else {
-            getGameCode(lastDay) + 1
+            getGameCode(lastDate) + 1
         }
-        val endCode = getGameCode(today)
+        val endCode = getGameCode(dateKST)
         if (startCode >= endCode) {
             return
         }
@@ -66,7 +66,7 @@ class KBLService(private val kblRepository: KBLRepository) {
         webDriver.get(url)
         val trSelect = webDriver.findElements(By.className("tr_selected"))
         if (trSelect.isEmpty()) return 80042809
-        
+
         val trSelectLast = trSelect.last()
         val tdBtn = trSelectLast.findElements(By.cssSelector("td.td_btn > a"))
         if (tdBtn.isNotEmpty()) {
