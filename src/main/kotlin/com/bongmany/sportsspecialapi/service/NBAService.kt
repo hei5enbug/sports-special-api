@@ -22,51 +22,48 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
 
     private var lastUpdate: Date? = null
     private val log = LogFactory.getLog(NBAController::class.java)
+    private var checkDuplicated = false
 
     fun runCrawler() {
         lastUpdate = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
-        val monthList = listOf("december", "january", "february", "march", "april", "may")
+        checkDuplicated = lastUpdate.toString() != "0001-12-01"
 
-        val todayET = ZonedDateTime.now(ZoneId.of("America/New_York"))
-        val todayURL = "${SecurityInformation.secondURL}${monthList[todayET.monthValue]}.html"
-        getTodayGame(todayURL, todayET)
+        val monthList = listOf("december", "january", "february", "march", "april", "may")
+        getTodayGame(monthList)
 
         val firstIndex =
             if (lastUpdate!!.toLocalDate().monthValue == 12) 0
             else lastUpdate!!.toLocalDate().monthValue
         val monthRange = firstIndex..monthList.lastIndex
-        var firstMonth = lastUpdate.toString() != "0001-12-01"
+
         for (i in monthRange) {
             val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
-//            log.info("## NBAService -- $url")
-            if (firstMonth) {
-                rangeSchedule(url, firstMonth)
-                firstMonth = false
-            } else {
-                rangeSchedule(url)
-            }
+            rangeSchedule(url)
         }
     }
 
-    private fun getTodayGame(url: String, todayET: ZonedDateTime) {
-        todayRepository.deleteAll()
-        val recentDate = arrayListOf<String>(
-            todayET.minusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-            todayET.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-            todayET.plusDays(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    private fun getTodayGame(monthList: List<String>) {
+        val formatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy", Locale.ENGLISH)
+        val todayET = ZonedDateTime.now(ZoneId.of("America/New_York"))
+        val recentDate = arrayListOf<ZonedDateTime>(
+            todayET.minusDays(1),
+            todayET,
+            todayET.plusDays(1)
         )
 
-        val doc = Jsoup.connect(url).get()
-        val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
-        for (tr in scheduleList) {
-            val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
-            val gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
-            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
-            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
-            if (recentDate.contains(dateForm)) {
+        for (gameDate in recentDate) {
+            val todayURL = "${SecurityInformation.secondURL}${monthList[gameDate.monthValue]}.html"
+            val doc = Jsoup.connect(todayURL).get()
+            val scheduleList = doc.getElementsMatchingOwnText(gameDate.format(formatter))
+            for (href in scheduleList) {
+                val tr = href.parent().parent()
+                val dateForm = gameDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                var gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
+                gameTime = convertTimeFormat(gameTime)
                 val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
                 val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
+
                 val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba", gameTime)
                 try {
                     todayRepository.save(dbField)
@@ -78,19 +75,15 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         }
     }
 
-    private fun rangeSchedule(url: String, firstMonth: Boolean = false) {
-        var dateScan = firstMonth
+    private fun rangeSchedule(url: String) {
         val doc = Jsoup.connect(url).get()
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
 
         for (tr in scheduleList) {
             val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
-            val toDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
-            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(toDate)
-            if (dateScan || lastUpdate.toString() == dateForm) {
-                if (lastUpdate.toString() == dateForm) dateScan = false
-                continue
-            }
+            val parseGameDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
+            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(parseGameDate)
+            if (parseGameDate <= lastUpdate) continue
 
             val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
             val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
@@ -101,7 +94,7 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
 
             if (specialData != null) {
                 val dbField = NBAField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
-//                log.info("## NBAService -- $dbField")
+//                log.info("## NBAService save : $dateForm, $homeTeam, $awayTeam, ${specialData[0]}, ${specialData[1]}")
                 try {
                     nbaRepository.save(dbField)
                 } catch (e: DataIntegrityViolationException) {
@@ -148,5 +141,10 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
             }
         }
         return null
+    }
+
+    fun convertTimeFormat(prevFormat: String): String {
+        val parseGameTime = SimpleDateFormat("h:mma", Locale.ENGLISH).parse(prevFormat)
+        return SimpleDateFormat("HH:mm").format(parseGameTime)
     }
 }

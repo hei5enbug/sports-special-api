@@ -3,7 +3,9 @@ package com.bongmany.sportsspecialapi.service
 import com.bongmany.sportsspecialapi.SecurityInformation
 import com.bongmany.sportsspecialapi.controller.NBAController
 import com.bongmany.sportsspecialapi.model.KBLField
+import com.bongmany.sportsspecialapi.model.TodayGame
 import com.bongmany.sportsspecialapi.repository.KBLRepository
+import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
@@ -20,7 +22,7 @@ import java.util.*
 import java.util.logging.Level
 
 @Service
-class KBLService(private val kblRepository: KBLRepository) {
+class KBLService(private val kblRepository: KBLRepository, private val todayRepository: TodayRepository) {
 
     private var lastUpdate: Date? = null
     private lateinit var webDriver: WebDriver
@@ -34,17 +36,14 @@ class KBLService(private val kblRepository: KBLRepository) {
 
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
         val lastDate = lastUpdate!!.toLocalDate().format(formatter)
-        val dateKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).format(formatter)
+        val todayKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).format(formatter)
+        getTodayGame()
         val startCode = if (lastDate == "20201009") {
             80042809
         } else {
             getGameCode(lastDate) + 1
         }
-        val endCode = getGameCode(dateKST)
-        if (startCode >= endCode) {
-            return
-        }
-
+        val endCode = getGameCode(todayKST)
 
         for (gameCode in startCode..endCode) {
             val fieldLine = makeField(gameCode)
@@ -74,6 +73,38 @@ class KBLService(private val kblRepository: KBLRepository) {
             return lastLink.substring(lastLink.length - 8).toInt()
         }
         return 80042809
+    }
+
+    private fun getTodayGame() {
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        val todayKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
+        val recentDate = arrayListOf<String>(
+            todayKST.minusDays(1).format(formatter),
+            todayKST.format(formatter),
+            todayKST.plusDays(1).format(formatter)
+        )
+
+        for (gameDate in recentDate) {
+            val dateCode = gameDate.replace("-", "")
+            val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$dateCode"
+            webDriver.get(url)
+
+            val trSelect = webDriver.findElements(By.className("tr_selected"))
+            for (tr in trSelect) {
+                val gameTime = tr.findElements(By.className("td_time"))
+                if (gameTime.isEmpty()) break
+                val homeTeam = tr.findElements(By.className("txt_team"))[0].text
+                val awayTeam = tr.findElements(By.className("txt_team"))[1].text
+                val dbField = TodayGame(Date.valueOf(gameDate), homeTeam, awayTeam, "kbl", gameTime[0].text)
+                try {
+                    todayRepository.save(dbField)
+                } catch (e: DataIntegrityViolationException) {
+                    log.error(e)
+                    continue
+                }
+            }
+        }
+
     }
 
     private fun makeField(gameCode: Int): KBLField? {

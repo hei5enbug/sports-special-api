@@ -1,25 +1,28 @@
 package com.bongmany.sportsspecialapi.service
 
 import com.bongmany.sportsspecialapi.controller.NBAController
+import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 
-// Update Schedule 00:10 AM everyday
+
 @Component
 class AutoSDUpdate(
     private val nbaService: NBAService,
     private val wkblService: WKBLService,
-    private val kblService: KBLService
+    private val kblService: KBLService,
+    private val todayRepository: TodayRepository
 ) {
 
     private final val log = LogFactory.getLog(NBAController::class.java)
 
     @PostConstruct
-    @Scheduled(cron = "0 21 00 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 00 21 * * *", zone = "Asia/Seoul")
     fun updateAllSD() {
         // update PM 09:00 everyday
+        todayRepository.deleteAll()
         updateNBA()
         updateKBL()
         // updateWKBL()
