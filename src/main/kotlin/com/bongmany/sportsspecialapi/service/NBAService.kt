@@ -52,19 +52,21 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
             todayET.plusDays(1)
         )
 
-        for (gameDate in recentDate) {
-            val todayURL = "${SecurityInformation.secondURL}${monthList[gameDate.monthValue]}.html"
+        for (dateET in recentDate) {
+            val todayURL = "${SecurityInformation.secondURL}${monthList[dateET.monthValue]}.html"
             val doc = Jsoup.connect(todayURL).get()
-            val scheduleList = doc.getElementsMatchingOwnText(gameDate.format(formatter))
+            val scheduleList = doc.getElementsMatchingOwnText(dateET.format(formatter))
             for (href in scheduleList) {
                 val tr = href.parent().parent()
-                val dateForm = gameDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                var gameDate = dateET.format(formatter)
                 var gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
-                gameTime = convertTimeFormat(gameTime)
+                val dateTimeKST = changeKSTTimeZone(gameDate,gameTime).split(" ")
+                gameDate = dateTimeKST[0]
+                gameTime = dateTimeKST[1]
                 val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
                 val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
 
-                val dbField = TodayGame(Date.valueOf(dateForm), homeTeam, awayTeam, "nba", gameTime)
+                val dbField = TodayGame(Date.valueOf(gameDate), homeTeam, awayTeam, "nba", gameTime)
                 try {
                     todayRepository.save(dbField)
                 } catch (e: DataIntegrityViolationException) {
@@ -80,10 +82,10 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         val scheduleList = doc.select("#schedule tbody").first().getElementsByTag("tr")
 
         for (tr in scheduleList) {
-            val gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
-            val parseGameDate = SimpleDateFormat("EEE, MMM d, yyyy", Locale.ENGLISH).parse(gameDate)
-            val dateForm = SimpleDateFormat("yyyy-MM-dd").format(parseGameDate)
-            if (parseGameDate <= lastUpdate) continue
+            var gameDate = tr.getElementsByAttributeValue("data-stat", "date_game").text()
+            val gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
+            gameDate = changeKSTTimeZone(gameDate, gameTime).split(" ")[0]
+            if (Date.valueOf(gameDate) <= lastUpdate) continue
 
             val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
             val awayTeam = tr.getElementsByAttributeValue("data-stat", "visitor_team_name").text()
@@ -93,7 +95,7 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
             val specialData = getSpecialData(homeTeam, awayTeam, boxScore)
 
             if (specialData != null) {
-                val dbField = NBAField(Date.valueOf(dateForm), homeTeam, awayTeam, specialData[0], specialData[1])
+                val dbField = NBAField(Date.valueOf(gameDate), homeTeam, awayTeam, specialData[0], specialData[1])
 //                log.info("## NBAService save : $dateForm, $homeTeam, $awayTeam, ${specialData[0]}, ${specialData[1]}")
                 try {
                     nbaRepository.save(dbField)
@@ -143,8 +145,19 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         return null
     }
 
-    fun convertTimeFormat(prevFormat: String): String {
+    fun changeTimeFormat(prevFormat: String): String {
         val parseGameTime = SimpleDateFormat("h:mma", Locale.ENGLISH).parse(prevFormat)
         return SimpleDateFormat("HH:mm").format(parseGameTime)
+    }
+
+    fun changeKSTTimeZone(gameDate: String, gameTime: String): String {
+        val gameDateTime = "$gameDate ${changeTimeFormat(gameTime)} ET"
+        val parseFormatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy HH:mm z").withLocale(Locale.ENGLISH)
+        val resultFormmater = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+
+        val dateTimeET = ZonedDateTime.parse(gameDateTime, parseFormatter)
+        val dateTimeKST = dateTimeET.withZoneSameInstant(ZoneId.of("Asia/Seoul"))
+
+        return dateTimeKST.format(resultFormmater)
     }
 }
