@@ -43,7 +43,8 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         } else {
             getGameCode(lastDate) + 1
         }
-        val endCode = getGameCode(todayKST)
+        var endCode = getGameCode(todayKST)
+        if(endCode >= 80043078) endCode = 80043078
 
         for (gameCode in startCode..endCode) {
             val fieldLine = makeField(gameCode)
