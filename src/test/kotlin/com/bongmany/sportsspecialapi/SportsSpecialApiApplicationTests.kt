@@ -7,8 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest
 class SportsSpecialApiApplicationTests {
 
     @Test
-    fun TestNBAService() {
-        nbaService.runCrawler()
+    fun testSpecialDataApi() {
+        
     }
-
 }
