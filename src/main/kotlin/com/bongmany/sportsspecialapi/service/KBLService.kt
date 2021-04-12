@@ -21,33 +21,54 @@ import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.logging.Level
 
+
 @Service
 class KBLService(private val kblRepository: KBLRepository, private val todayRepository: TodayRepository) {
 
     private var lastUpdate: Date? = null
-    private lateinit var webDriver: WebDriver
     private var chromeOptions: ChromeOptions? = null
+    private lateinit var webDriver: WebDriver
+    private lateinit var originalWindow: String
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
         lastUpdate = kblRepository.findFirstByOrderByGameDateDesc()?.gameDate
         if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-09")
+
+        val monthList = listOf(
+            "202010", "202011", "202012",
+            "202101", "202102", "202103", "202104", "202105"
+        )
+        val firstIndex = when (val lastMonth = lastUpdate!!.toLocalDate().monthValue) {
+            10, 11, 12 -> lastMonth - 10
+            else -> lastMonth + 2
+        }
+        val monthRange = firstIndex..monthList.lastIndex
         createDriver()
 
-        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
-        val lastDate = lastUpdate!!.toLocalDate().format(formatter)
-        val todayKST = ZonedDateTime.now(ZoneId.of("Asia/Seoul")).format(formatter)
-        getTodayGame()
-        val startCode = if (lastDate == "20201009") {
-            80042809
-        } else {
-            getGameCode(lastDate) + 1
+        try {
+            getTodayGame()
+            for (monthIndex in monthRange) {
+                rangeSchedule(monthList[monthIndex])
+            }
+        } finally {
+            quitDriver()
         }
-        var endCode = getGameCode(todayKST)
-        if(endCode >= 80043078) endCode = 80043078
+    }
 
-        for (gameCode in startCode..endCode) {
-            val fieldLine = makeField(gameCode)
+    private fun rangeSchedule(yearMonth: String) {
+        val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$yearMonth"
+        webDriver.get(url)
+
+        val scheduleList = webDriver.findElements(By.cssSelector("#scheduleList > tr"))
+        for (tr in scheduleList) {
+            val gameLink = tr.findElements(By.cssSelector("td.td_btn > a"))
+            val dataDate = tr.getAttribute("data-date")
+            val toDate = SimpleDateFormat("yyyyMMdd", Locale.KOREAN).parse(dataDate)
+            val gameDate = Date.valueOf(SimpleDateFormat("yyyy-MM-dd").format(toDate))
+            if (gameLink.isEmpty() || (gameDate <= lastUpdate)) continue
+
+            val fieldLine = makeField(gameLink[0].getAttribute("href"))
             if (fieldLine != null) {
                 try {
                     kblRepository.save(fieldLine)
@@ -57,23 +78,6 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
                 }
             }
         }
-
-        quitDriver()
-    }
-
-    private fun getGameCode(gameDate: String): Int {
-        val url = "${SecurityInformation.kblURL}/schedule/kbl?date=$gameDate"
-        webDriver.get(url)
-        val trSelect = webDriver.findElements(By.className("tr_selected"))
-        if (trSelect.isEmpty()) return 80042809
-
-        val trSelectLast = trSelect.last()
-        val tdBtn = trSelectLast.findElements(By.cssSelector("td.td_btn > a"))
-        if (tdBtn.isNotEmpty()) {
-            val lastLink = tdBtn[0].getAttribute("href")
-            return lastLink.substring(lastLink.length - 8).toInt()
-        }
-        return 80042809
     }
 
     private fun getTodayGame() {
@@ -105,20 +109,21 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
                 }
             }
         }
-
     }
 
-    private fun makeField(gameCode: Int): KBLField? {
-        val url = "${SecurityInformation.kblURL}/game/$gameCode/cast"
-//        log.info("#KBLService - $url")
-        webDriver.get(url)
+    private fun makeField(url: String): KBLField? {
+        log.debug("# KBLService - $url")
 
-        val innerTime = webDriver.findElements(By.className("inner_time"))
+        val secondOptions = ChromeOptions().addArguments("headless")
+        val secondDriver = ChromeDriver(secondOptions)
+        secondDriver.get(url)
+
+        val innerTime = secondDriver.findElements(By.className("inner_time"))
         if (innerTime.size == 0) {
-            log.info("#KBLService - wrong page error")
+            log.info("# KBLService - wrong page error")
             return null
         } else if (!innerTime[0].text.contains("경기종료")) {
-            log.info("#KBLService - unfinished game")
+            log.info("# KBLService - unfinished game")
             return null
         }
 
@@ -127,22 +132,22 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         var freeCheck = false
         var freeWinner = ""
 
-        val txtDate = webDriver.findElement(By.className("txt_time")).text.substring(0, 9)
+        val txtDate = secondDriver.findElement(By.className("txt_time")).text.substring(0, 9)
         val yearCheck = if (txtDate.substring(0, 2).toInt() in 10..12) "2020" else "2021"
         val toDate = SimpleDateFormat("yyyyMM.dd (EE)", Locale.KOREAN).parse(yearCheck + txtDate)
         val dateForm = Date.valueOf(SimpleDateFormat("yyyy-MM-dd").format(toDate))
 
-        val hometeam = webDriver.findElement(
+        val hometeam = secondDriver.findElement(
             By.cssSelector(
                 "#gameScoreboardWrap > div > div > span.team_vs.team_vs1 > span > span"
             )
         ).text
-        val awayteam = webDriver.findElement(
+        val awayteam = secondDriver.findElement(
             By.cssSelector(
                 "#gameScoreboardWrap > div > div > span.team_vs.team_vs2 > span > span"
             )
         ).text
-        val relayPiece = webDriver.findElements(By.className("relay_piece"))
+        val relayPiece = secondDriver.findElements(By.className("relay_piece"))
         for (it in relayPiece) {
             val relay = it.text
             if (!threeCheck && relay.contains("3점슛성공")) {
@@ -155,6 +160,8 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
                 freeCheck = true
             } else if (threeCheck && freeCheck) break
         }
+
+        secondDriver.quit()
 
         return KBLField(dateForm, hometeam, awayteam, threeWinner, freeWinner)
     }
@@ -172,5 +179,6 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
 
     private fun quitDriver() {
         webDriver.quit()
+        log.info("# KBLService - quitDriver Success")
     }
 }

@@ -37,8 +37,8 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
             else lastUpdate!!.toLocalDate().monthValue
         val monthRange = firstIndex..monthList.lastIndex
 
-        for (i in monthRange) {
-            val url = "${SecurityInformation.secondURL}${monthList[i]}.html"
+        for (monthIndex in monthRange) {
+            val url = "${SecurityInformation.secondURL}${monthList[monthIndex]}.html"
             rangeSchedule(url)
         }
     }
