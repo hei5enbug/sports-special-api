@@ -114,7 +114,8 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
     private fun makeField(url: String): KBLField? {
         log.debug("# KBLService - $url")
 
-        val secondOptions = ChromeOptions().addArguments("headless")
+        val secondOptions = ChromeOptions()
+            .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
         val secondDriver = ChromeDriver(secondOptions)
         secondDriver.get(url)
 
@@ -173,7 +174,9 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         )
         System.setProperty("webdriver.chrome.silentOutput", "true")
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
-        chromeOptions = ChromeOptions().addArguments("headless")
+        chromeOptions = ChromeOptions()
+            .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
+
         webDriver = ChromeDriver(chromeOptions)
     }
 
