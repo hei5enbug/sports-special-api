@@ -24,7 +24,7 @@ class AutoSDUpdate(
         // update PM 09:00 everyday
         todayRepository.deleteAll()
         updateNBA()
-        // updateKBL()
+        updateKBL()
         // updateWKBL()
     }
 
