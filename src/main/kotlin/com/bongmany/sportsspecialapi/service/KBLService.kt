@@ -28,7 +28,7 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
     private var lastUpdate: Date? = null
     private var chromeOptions: ChromeOptions? = null
     private lateinit var webDriver: WebDriver
-    private lateinit var originalWindow: String
+    private lateinit var secondDriver: WebDriver
     private val log = LogFactory.getLog(NBAController::class.java)
 
     fun runCrawler() {
@@ -113,10 +113,6 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
 
     private fun makeField(url: String): KBLField? {
         log.debug("# KBLService - $url")
-
-        val secondOptions = ChromeOptions()
-            .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
-        val secondDriver = ChromeDriver(secondOptions)
         secondDriver.get(url)
 
         val innerTime = secondDriver.findElements(By.className("inner_time"))
@@ -161,9 +157,7 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
                 freeCheck = true
             } else if (threeCheck && freeCheck) break
         }
-
-        secondDriver.quit()
-
+        
         return KBLField(dateForm, hometeam, awayteam, threeWinner, freeWinner)
     }
 
@@ -176,12 +170,13 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
         chromeOptions = ChromeOptions()
             .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
-
         webDriver = ChromeDriver(chromeOptions)
+        secondDriver = ChromeDriver(chromeOptions)
     }
 
     private fun quitDriver() {
         webDriver.quit()
+        secondDriver.quit()
         log.info("# KBLService - quitDriver Success")
     }
 }
