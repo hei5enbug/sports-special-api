@@ -8,6 +8,7 @@ import com.bongmany.sportsspecialapi.repository.KBLRepository
 import com.bongmany.sportsspecialapi.repository.TodayRepository
 import org.apache.juli.logging.LogFactory
 import org.openqa.selenium.By
+import org.openqa.selenium.PageLoadStrategy
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
@@ -157,7 +158,7 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
                 freeCheck = true
             } else if (threeCheck && freeCheck) break
         }
-        
+
         return KBLField(dateForm, hometeam, awayteam, threeWinner, freeWinner)
     }
 
@@ -170,8 +171,16 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
         chromeOptions = ChromeOptions()
             .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
-        webDriver = ChromeDriver(chromeOptions)
-        secondDriver = ChromeDriver(chromeOptions)
+        val options = ChromeOptions()
+        options.addArguments("enable-automation")
+        options.addArguments("--headless")
+        options.addArguments("--no-sandbox")
+        options.addArguments("--disable-extensions")
+        options.addArguments("--dns-prefetch-disable")
+        options.addArguments("--disable-gpu")
+        options.setPageLoadStrategy(PageLoadStrategy.NORMAL)
+        webDriver = ChromeDriver(options)
+        secondDriver = ChromeDriver(options)
     }
 
     private fun quitDriver() {
