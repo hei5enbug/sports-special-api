@@ -171,16 +171,8 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
         java.util.logging.Logger.getLogger("org.openqa.selenium").level = Level.OFF
         chromeOptions = ChromeOptions()
             .addArguments("--headless", "--no-sandbox", "--disable-dev-shm-usage")
-        val options = ChromeOptions()
-        options.addArguments("enable-automation")
-        options.addArguments("--headless")
-        options.addArguments("--no-sandbox")
-        options.addArguments("--disable-extensions")
-        options.addArguments("--dns-prefetch-disable")
-        options.addArguments("--disable-gpu")
-        options.setPageLoadStrategy(PageLoadStrategy.NORMAL)
-        webDriver = ChromeDriver(options)
-        secondDriver = ChromeDriver(options)
+        webDriver = ChromeDriver(chromeOptions)
+        secondDriver = ChromeDriver(chromeOptions)
     }
 
     private fun quitDriver() {
