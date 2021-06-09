@@ -29,7 +29,7 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
         checkDuplicated = lastUpdate.toString() != "0001-12-01"
 
-        val monthList = listOf("december", "january", "february", "march", "april", "may")
+        val monthList = listOf("december", "january", "february", "march", "april", "may", "june")
         getTodayGame(monthList)
 
         val firstIndex =
@@ -60,7 +60,7 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
                 val tr = href.parent().parent()
                 var gameDate = dateET.format(formatter)
                 var gameTime = tr.getElementsByAttributeValue("data-stat", "game_start_time").text() + "m"
-                val dateTimeKST = changeKSTTimeZone(gameDate,gameTime).split(" ")
+                val dateTimeKST = changeKSTTimeZone(gameDate, gameTime).split(" ")
                 gameDate = dateTimeKST[0]
                 gameTime = dateTimeKST[1]
                 val homeTeam = tr.getElementsByAttributeValue("data-stat", "home_team_name").text()
