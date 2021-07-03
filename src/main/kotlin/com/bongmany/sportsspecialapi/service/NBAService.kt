@@ -29,7 +29,7 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
         checkDuplicated = lastUpdate.toString() != "0001-12-01"
 
-        val monthList = listOf("december", "january", "february", "march", "april", "may", "june")
+        val monthList = listOf("december", "january", "february", "march", "april", "may", "june", "july")
         getTodayGame(monthList)
 
         val firstIndex =
