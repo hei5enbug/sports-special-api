@@ -160,11 +160,13 @@ class KBLService(private val kblRepository: KBLRepository, private val todayRepo
             val relay = it.text
             if (!threeCheck && relay.contains("3점슛성공")) {
                 threeWinner = relay.replace(" 3점슛성공", "")
-                threeWinner = threeWinner.replaceFirst(" ", "(") + ")"
+                val secondSpaceIndex = threeWinner.indexOf(" ", threeWinner.indexOf(" ") + 1)
+                threeWinner = threeWinner.replaceRange(secondSpaceIndex, secondSpaceIndex + 1, "(") + ")"
                 threeCheck = true
             } else if (!freeCheck && relay.contains("자유투성공")) {
                 freeWinner = relay.replace(" 자유투성공", "")
-                freeWinner = freeWinner.replaceFirst(" ", "(") + ")"
+                val secondSpaceIndex = freeWinner.indexOf(" ", freeWinner.indexOf(" ") + 1)
+                freeWinner = freeWinner.replaceRange(secondSpaceIndex, secondSpaceIndex + 1, "(") + ")"
                 freeCheck = true
             } else if (threeCheck && freeCheck) break
         }
