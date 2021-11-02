@@ -26,15 +26,16 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
 
     fun runCrawler() {
         lastUpdate = nbaRepository.findFirstByOrderByIdDesc()?.gameDate
-        if (lastUpdate == null) lastUpdate = Date.valueOf("0001-12-01")
+        if (lastUpdate == null) lastUpdate = Date.valueOf("0001-10-01")
         checkDuplicated = lastUpdate.toString() != "0001-12-01"
 
-        val monthList = listOf("december", "january", "february", "march", "april", "may", "june", "july")
+        val monthList = listOf("october", "november", "december", "january", "february", "march", "april")
         getTodayGame(monthList)
 
+        val monthValue = lastUpdate!!.toLocalDate().monthValue
         val firstIndex =
-            if (lastUpdate!!.toLocalDate().monthValue == 12) 0
-            else lastUpdate!!.toLocalDate().monthValue
+            if (monthValue > 9) monthValue - 10
+            else monthValue + 2
         val monthRange = firstIndex..monthList.lastIndex
 
         for (monthIndex in monthRange) {
@@ -53,7 +54,9 @@ class NBAService(private val nbaRepository: NBARepository, private val todayRepo
         )
 
         for (dateET in recentDate) {
-            val todayURL = "${SecurityInformation.secondURL}${monthList[dateET.monthValue]}.html"
+            val monthIndex = if (dateET.monthValue > 9) dateET.monthValue - 10 else dateET.monthValue + 2
+            val todayURL = "${SecurityInformation.secondURL}${monthList[monthIndex]}.html"
+
             val doc = Jsoup.connect(todayURL).get()
             val scheduleList = doc.getElementsMatchingOwnText(dateET.format(formatter))
             for (href in scheduleList) {

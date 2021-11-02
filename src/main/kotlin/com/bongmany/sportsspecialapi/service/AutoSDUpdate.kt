@@ -16,16 +16,16 @@ class AutoSDUpdate(
     private val todayRepository: TodayRepository
 ) {
 
-    private final val log = LogFactory.getLog(NBAController::class.java)
+    private val log = LogFactory.getLog(NBAController::class.java)
 
     @PostConstruct
     @Scheduled(cron = "0 00 21 * * *", zone = "Asia/Seoul")
     fun updateAllSD() {
         // update PM 09:00 everyday
         todayRepository.deleteAll()
-        updateNBA()
-        updateKBL()
-        // updateWKBL()
+//        updateNBA()
+//        updateKBL()
+         updateWKBL()
     }
 
     fun updateNBA() {

@@ -21,16 +21,18 @@ class WKBLService(private val wkblRepository: WKBLRepository) {
     fun runCrawler() {
 
         lastUpdate = wkblRepository.findFirstByOrderByIdDesc()?.gameDate
-        if (lastUpdate == null) lastUpdate = Date.valueOf("2020-10-01")
+        if (lastUpdate == null) lastUpdate = Date.valueOf("2021-10-01")
 
-        val monthList = listOf("202010", "202011", "202012", "202101", "202102")
+        val monthList = listOf("202110", "202111", "202112", "202201", "202203")
         val firstIndex = when (val lastMonth = lastUpdate!!.toLocalDate().monthValue) {
             in 10..12 -> lastMonth - 10
-            else -> lastMonth + 2
+            1 -> 3
+            3 -> 4
+            else -> 0
         }
 
         val monthRange = firstIndex..monthList.lastIndex
-        var firstMonth = lastUpdate.toString() != "2020-10-01"
+        var firstMonth = lastUpdate.toString() != "2021-10-01"
 
         for (i in monthRange) {
             if (firstMonth) {
