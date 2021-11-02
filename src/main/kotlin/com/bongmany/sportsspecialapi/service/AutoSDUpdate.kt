@@ -23,9 +23,9 @@ class AutoSDUpdate(
     fun updateAllSD() {
         // update PM 09:00 everyday
         todayRepository.deleteAll()
-//        updateNBA()
-//        updateKBL()
-         updateWKBL()
+        updateNBA()
+        updateKBL()
+        updateWKBL()
     }
 
     fun updateNBA() {
