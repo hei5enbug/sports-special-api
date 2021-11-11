@@ -12,8 +12,17 @@ http://3.35.80.196:8080/special/kbl
 http://3.35.80.196:8080/special/wkbl
 
 ## data for one team
-http://3.35.80.196:8080/special/nba/{teamName}
 
-http://3.35.80.196:8080/special/kbl/{teamName}
+#### http://3.35.80.196:8080/special/nba/{teamName}
 
-http://3.35.80.196:8080/special/wkbl/{teamName}
+(Milwaukee Bucks) http://3.35.80.196:8080/special/nba/Milwaukee%20Bucks 
+
+
+#### http://3.35.80.196:8080/special/kbl/{teamName}
+
+(안양 KGC) http://3.35.80.196:8080/special/kbl/%EC%95%88%EC%96%91%20KGC 
+
+
+#### http://3.35.80.196:8080/special/wkbl/{teamName}
+
+(삼성생명) http://3.35.80.196:8080/special/wkbl/%EC%82%BC%EC%84%B1%EC%83%9D%EB%AA%85
