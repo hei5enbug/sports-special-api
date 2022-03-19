@@ -1,4 +1,5 @@
 # sports-special-api
+AWS Free-tier 가 끝나 다른 Cloud 서비스에 배포 예정입니다.
 
 ## home
 http://3.35.80.196:8080
